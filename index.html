@@ -4,10 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Controle de Patrimônio - IFSC</title>
-    <!-- Tailwind CSS para um design moderno e responsivo -->
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Biblioteca PapaParse para ler arquivos CSV de forma robusta -->
+    <!-- PapaParse para CSV -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <!-- Fuse.js para Fuzzy Search -->
+    <script src="https://cdn.jsdelivr.net/npm/fuse.js/dist/fuse.min.js"></script>
+
     <script>
         tailwind.config = {
             theme: {
@@ -20,78 +23,7 @@
             }
         }
     </script>
-    <style>
-        /* Estilos adicionais para uma melhor experiência */
-        body {
-            font-family: 'Inter', sans-serif;
-        }
-        .file-input-button {
-            transition: all 0.2s ease-in-out;
-        }
-        .file-input-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        }
-        .status-badge {
-            padding: 2px 8px;
-            border-radius: 9999px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
-        .status-pendente { background-color: #f59e0b; color: white; }
-        .status-encontrado { background-color: #10b981; color: white; }
-        .status-transferido { background-color: #3b82f6; color: white; }
-        .status-nao-encontrado { background-color: #ef4444; color: white; }
-        
-        #toast {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            padding: 12px 24px;
-            border-radius: 8px;
-            color: white;
-            font-weight: 500;
-            z-index: 1000;
-            opacity: 0;
-            transition: opacity 0.3s, bottom 0.3s;
-            pointer-events: none;
-        }
-        #toast.show {
-            opacity: 1;
-            bottom: 30px;
-        }
-        #toast.success { background-color: #10b981; }
-        #toast.error { background-color: #ef4444; }
-
-        /* Estilo para a tela de carregamento */
-        #loader {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(255, 255, 255, 0.8);
-            backdrop-filter: blur(5px);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 2000;
-        }
-        .spinner {
-            border: 4px solid rgba(0, 0, 0, 0.1);
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            border-left-color: #008040;
-            animation: spin 1s ease infinite;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body class="bg-gray-50 text-gray-800">
 
@@ -109,10 +41,10 @@
             </div>
         </header>
 
-        <!-- Seção de Upload (visível inicialmente ou se não houver dados salvos) -->
-        <section id="uploadSection" class="text-center py-16 hidden">
+        <!-- Seção de Upload -->
+        <section id="uploadSection" class="text-center py-16">
             <h2 class="text-xl font-semibold mb-4">Comece importando seu arquivo de patrimônio</h2>
-            <p class="text-gray-600 mb-6 max-w-2xl mx-auto">Selecione o arquivo CSV gerado pelo sistema para iniciar a conferência. O arquivo deve conter uma coluna chamada 'nr_tombo'.</p>
+            <p class="text-gray-600 mb-6 max-w-2xl mx-auto">Selecione o arquivo CSV gerado pelo sistema para iniciar a conferência. O arquivo deve conter as colunas 'nr_tombo', 'Descrica07' e 'nome'.</p>
             <label for="csvFileInput" class="file-input-button inline-flex items-center gap-2 bg-ifsc-green hover:bg-ifsc-green-dark text-white font-bold py-3 px-6 rounded-lg cursor-pointer shadow-md">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-upload-cloud"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="M12 12v9"/><path d="m16 16-4-4-4 4"/></svg>
                 Carregar Arquivo CSV
@@ -120,9 +52,8 @@
             <input type="file" id="csvFileInput" class="hidden" accept=".csv">
         </section>
 
-        <!-- Seção Principal de Controle (oculta inicialmente) -->
-        <main id="mainContent" class="hidden space-y-6">
-
+        <!-- Seção Principal de Controle (Controlada por JS) -->
+        <main id="mainContent" class="space-y-6 hidden">
             <!-- Painel de Conferência e Ações -->
             <div class="bg-white p-4 sm:p-6 rounded-lg shadow-md border border-gray-200">
                 <h3 class="font-bold text-lg mb-4 text-gray-700">Conferência Rápida</h3>
@@ -193,6 +124,7 @@
                             <!-- Linhas da tabela serão inseridas aqui via JS -->
                         </tbody>
                     </table>
+                     <div id="paginationControls" class="flex justify-center items-center mt-4 space-x-2"></div>
                 </div>
             </div>
         </main>
@@ -206,293 +138,7 @@
         <div class="spinner"></div>
     </div>
 
-
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-    // Referências aos elementos do DOM
-    const csvFileInput = document.getElementById('csvFileInput');
-    const uploadSection = document.getElementById('uploadSection');
-    const mainContent = document.getElementById('mainContent');
-    const tomboInput = document.getElementById('tomboInput');
-    const checkButton = document.getElementById('checkButton');
-    const filterInput = document.getElementById('filterInput');
-    const transferButton = document.getElementById('transferButton');
-    const exportButton = document.getElementById('exportButton');
-    const resetButton = document.getElementById('resetButton');
-    const patrimonioTableBody = document.getElementById('patrimonioTableBody');
-    const selectAllCheckbox = document.getElementById('selectAllCheckbox');
-    const toast = document.getElementById('toast');
-    const loader = document.getElementById('loader');
-
-    // Elementos de contagem
-    const totalCountEl = document.getElementById('totalCount');
-    const foundCountEl = document.getElementById('foundCount');
-    const transferredCountEl = document.getElementById('transferredCount');
-    const pendingCountEl = document.getElementById('pendingCount');
-
-    let patrimonioData = [];
-    let audioContext;
-
-    // --- Funções de Persistência Local ---
-    function saveDataToLocalStorage() {
-        try {
-            localStorage.setItem('patrimonioData', JSON.stringify(patrimonioData));
-        } catch (e) {
-            console.error("Erro ao salvar dados no localStorage:", e);
-            showToast("Não foi possível salvar os dados. O armazenamento pode estar cheio.", "error");
-        }
-    }
-
-    function loadDataFromLocalStorage() {
-        const savedData = localStorage.getItem('patrimonioData');
-        if (savedData) {
-            try {
-                const parsedData = JSON.parse(savedData);
-                // Validação robusta dos dados carregados
-                if (Array.isArray(parsedData) && parsedData.length > 0) {
-                    patrimonioData = parsedData;
-                    mainContent.classList.remove('hidden');
-                    renderTable();
-                    updateStats();
-                    showToast(`Dados carregados localmente (${patrimonioData.length} itens).`);
-                    return true;
-                } else {
-                    // Limpa dados inválidos (não é um array, está vazio, etc.)
-                    localStorage.removeItem('patrimonioData');
-                }
-            } catch(e) {
-                console.error("Erro ao carregar dados locais (corrompidos):", e);
-                localStorage.removeItem('patrimonioData'); // Limpa dados corrompidos
-            }
-        }
-        return false;
-    }
-
-    // --- Funções de UI e Feedback ---
-    function initAudio() {
-        if (audioContext) return;
-        try {
-            audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        } catch (e) { console.warn('Web Audio API is not supported.'); }
-    }
-    
-    function playBeep(success = true) {
-        if (!audioContext) return;
-        const oscillator = audioContext.createOscillator();
-        const gainNode = audioContext.createGain();
-        oscillator.connect(gainNode);
-        gainNode.connect(audioContext.destination);
-        gainNode.gain.setValueAtTime(0, audioContext.currentTime);
-        gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.01);
-        oscillator.frequency.value = success ? 880.0 : 440.0;
-        oscillator.type = 'sine';
-        oscillator.start(audioContext.currentTime);
-        oscillator.stop(audioContext.currentTime + 0.15);
-        gainNode.gain.exponentialRampToValueAtTime(0.00001, audioContext.currentTime + 0.15);
-    }
-
-    function showLoader(show) {
-        // Usar manipulação de estilo direto é mais robusto que alternar classes com o CDN do Tailwind
-        loader.style.display = show ? 'flex' : 'none';
-    }
-
-    function showToast(message, type = 'success', duration = 3000) {
-        toast.textContent = message;
-        toast.className = '';
-        toast.classList.add(type, 'show');
-        setTimeout(() => toast.classList.remove('show'), duration);
-    }
-
-    // --- Funções de Lógica Principal ---
-    function renderTable(filter = '') {
-        patrimonioTableBody.innerHTML = '';
-        const filterText = filter.toLowerCase();
-        const filteredData = patrimonioData.filter(item => {
-            const tombo = item.nr_tombo || '';
-            const desc = item.Descrica07 || '';
-            const resp = item.nome || '';
-            return tombo.toString().includes(filterText) || 
-                   desc.toLowerCase().includes(filterText) ||
-                   resp.toLowerCase().includes(filterText);
-        });
-
-        if (filteredData.length === 0 && patrimonioData.length > 0) {
-            patrimonioTableBody.innerHTML = `<tr><td colspan="5" class="text-center p-6 text-gray-500">Nenhum item encontrado.</td></tr>`;
-            return;
-        }
-
-        filteredData.forEach((item) => {
-            const row = document.createElement('tr');
-            row.className = `border-b hover:bg-gray-50 ${item.status === 'Encontrado' ? 'bg-green-50' : ''} ${item.status === 'Transferido' ? 'bg-blue-50' : ''}`;
-            row.dataset.tombo = item.nr_tombo;
-            let statusClass = { 'Pendente': 'status-pendente', 'Encontrado': 'status-encontrado', 'Transferido': 'status-transferido' }[item.status] || '';
-            row.innerHTML = `
-                <td class="p-3 text-center"><input type="checkbox" class="item-checkbox" data-tombo="${item.nr_tombo}"></td>
-                <td class="p-3 font-medium">${item.nr_tombo}</td>
-                <td class="p-3">${item.Descrica07 || 'N/A'}</td>
-                <td class="p-3">${item.nome || 'N/A'}</td>
-                <td class="p-3 text-center"><span class="status-badge ${statusClass}">${item.status}</span></td>
-            `;
-            patrimonioTableBody.appendChild(row);
-        });
-        updateCheckboxState();
-    }
-
-    function updateStats() {
-        const total = patrimonioData.length;
-        const found = patrimonioData.filter(item => item.status === 'Encontrado').length;
-        const transferred = patrimonioData.filter(item => item.status === 'Transferido').length;
-        const pending = total - found - transferred;
-
-        totalCountEl.textContent = total;
-        foundCountEl.textContent = found;
-        transferredCountEl.textContent = transferred;
-        pendingCountEl.textContent = pending;
-    }
-    
-    function processCheck() {
-        const tomboValue = tomboInput.value.trim();
-        if (!tomboValue) return;
-
-        const item = patrimonioData.find(p => p.nr_tombo == tomboValue);
-        if (item) {
-            if (item.status === 'Pendente') {
-                item.status = 'Encontrado';
-                showToast(`Item ${tomboValue} encontrado!`);
-                playBeep(true);
-                saveDataToLocalStorage(); // Salva a alteração
-            } else {
-                showToast(`Item ${tomboValue} já conferido (Status: ${item.status}).`, 'error');
-                playBeep(false);
-            }
-            renderTable(filterInput.value); // Re-renderiza para mostrar a mudança
-            updateStats();
-        } else {
-            showToast(`Item com tombo ${tomboValue} não encontrado na lista.`, 'error');
-            playBeep(false);
-        }
-        tomboInput.value = '';
-        tomboInput.focus();
-    }
-    
-    function updateCheckboxState() {
-        const selectedCount = document.querySelectorAll('.item-checkbox:checked').length;
-        transferButton.disabled = selectedCount === 0;
-        if (transferButton.querySelector('span')) {
-            transferButton.querySelector('span').textContent = selectedCount > 0 ? `Transferir (${selectedCount})` : 'Transferir';
-        }
-    }
-    
-    // --- Event Handlers ---
-    csvFileInput.addEventListener('change', (event) => {
-        const file = event.target.files[0];
-        if (file) {
-            initAudio();
-            showLoader(true);
-            Papa.parse(file, {
-                header: true, skipEmptyLines: true, // Deixa o PapaParse detectar a codificação automaticamente
-                complete: (results) => {
-                    // Validação robusta dos cabeçalhos
-                    if (results.meta.aborted || results.errors.length > 0) {
-                        showLoader(false);
-                        const errorMsg = results.errors[0]?.message || "Erro desconhecido ao processar o arquivo.";
-                        showToast(`Erro de parsing: ${errorMsg}`, 'error');
-                        csvFileInput.value = ''; // Limpa o input
-                        return;
-                    }
-                    if (results.data.length > 0 && (!results.data[0].hasOwnProperty('nr_tombo') || !results.data[0].hasOwnProperty('Descrica07'))) {
-                        showLoader(false);
-                        showToast("Erro: A coluna 'nr_tombo' não foi encontrada.", 'error');
-                        csvFileInput.value = ''; return;
-                    }
-                    patrimonioData = results.data.map(item => ({...item, status: 'Pendente', original_responsavel: item.nome}));
-                    saveDataToLocalStorage();
-                    uploadSection.classList.add('hidden');
-                    mainContent.classList.remove('hidden');
-                    renderTable();
-                    updateStats();
-                    showLoader(false);
-                    showToast(`${patrimonioData.length} itens carregados com sucesso!`);
-                    tomboInput.focus();
-                },
-                error: (error) => {
-                    showLoader(false);
-                    showToast(`Erro ao ler o arquivo: ${error.message}`, 'error');
-                }
-            });
-        }
-    });
-
-    checkButton.addEventListener('click', processCheck);
-    tomboInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') { e.preventDefault(); processCheck(); } });
-    filterInput.addEventListener('input', () => renderTable(filterInput.value));
-    patrimonioTableBody.addEventListener('change', (e) => { if (e.target.classList.contains('item-checkbox')) updateCheckboxState(); });
-    selectAllCheckbox.addEventListener('change', () => {
-        document.querySelectorAll('.item-checkbox').forEach(cb => cb.checked = selectAllCheckbox.checked);
-        updateCheckboxState();
-    });
-
-    transferButton.addEventListener('click', () => {
-        const selectedTombos = Array.from(document.querySelectorAll('.item-checkbox:checked')).map(cb => cb.dataset.tombo);
-        if (selectedTombos.length === 0) return;
-        const newResponsible = prompt(`Digite o nome do novo responsável para os ${selectedTombos.length} itens:`);
-        if (newResponsible && newResponsible.trim() !== '') {
-            let changedCount = 0;
-            selectedTombos.forEach(tombo => {
-                const item = patrimonioData.find(p => p.nr_tombo == tombo);
-                if (item) { item.nome = newResponsible.trim(); item.status = 'Transferido'; changedCount++; }
-            });
-            saveDataToLocalStorage();
-            renderTable(filterInput.value);
-            updateStats();
-            selectAllCheckbox.checked = false;
-            updateCheckboxState();
-            showToast(`${changedCount} itens transferidos para ${newResponsible.trim()}.`);
-        }
-    });
-
-    exportButton.addEventListener('click', () => {
-        if (patrimonioData.length === 0) { showToast('Nenhum dado para exportar.', 'error'); return; }
-        const exportData = patrimonioData.map(item => ({
-            nr_tombo: item.nr_tombo, Descrica07: item.Descrica07,
-            responsavel_original: item.original_responsavel, responsavel_atual: item.nome,
-            status_conferencia: item.status === 'Pendente' ? 'Não Encontrado' : item.status,
-            data_conferencia: (item.status !== 'Pendente') ? new Date().toLocaleString('pt-BR') : ''
-        }));
-        const csv = Papa.unparse(exportData);
-        const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = `relatorio_patrimonio_${new Date().toISOString().slice(0, 10)}.csv`;
-        link.click();
-        showToast('Relatório CSV gerado com sucesso!');
-    });
-    
-    resetButton.addEventListener('click', () => {
-        if(confirm('Você tem certeza que deseja apagar todos os dados salvos? Esta ação não pode ser desfeita.')) {
-            localStorage.removeItem('patrimonioData');
-            showToast('Dados locais apagados. A página será recarregada.');
-            setTimeout(() => location.reload(), 1500);
-        }
-    });
-
-    // --- Bloco de Inicialização Robusto ---
-    try {
-        // Tenta carregar os dados. Se não houver dados ou eles forem inválidos, a função retorna false.
-        if (!loadDataFromLocalStorage()) {
-            // Se não carregou dados, exibe a tela de upload.
-            uploadSection.classList.remove('hidden');
-        }
-    } catch (e) {
-        console.error("Erro fatal na inicialização:", e);
-        // Fallback definitivo: se qualquer erro inesperado ocorrer, força a exibição da tela de upload.
-        mainContent.classList.add('hidden');
-        uploadSection.classList.remove('hidden');
-        showToast("Ocorreu um erro ao carregar. Por favor, importe o arquivo CSV.", "error");
-    }
-});
-</script>
+<script src="script.js" defer></script>
 
 </body>
 </html>
-
