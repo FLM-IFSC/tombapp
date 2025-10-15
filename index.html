@@ -292,7 +292,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function showLoader(show) {
-        loader.classList.toggle('hidden', !show);
+        // Usar manipulação de estilo direto é mais robusto que alternar classes com o CDN do Tailwind
+        loader.style.display = show ? 'flex' : 'none';
     }
 
     function showToast(message, type = 'success', duration = 3000) {
@@ -389,9 +390,17 @@ document.addEventListener('DOMContentLoaded', () => {
             initAudio();
             showLoader(true);
             Papa.parse(file, {
-                header: true, skipEmptyLines: true, encoding: "ISO-8859-1",
+                header: true, skipEmptyLines: true, // Deixa o PapaParse detectar a codificação automaticamente
                 complete: (results) => {
-                    if (results.data.length > 0 && !results.data[0].hasOwnProperty('nr_tombo')) {
+                    // Validação robusta dos cabeçalhos
+                    if (results.meta.aborted || results.errors.length > 0) {
+                        showLoader(false);
+                        const errorMsg = results.errors[0]?.message || "Erro desconhecido ao processar o arquivo.";
+                        showToast(`Erro de parsing: ${errorMsg}`, 'error');
+                        csvFileInput.value = ''; // Limpa o input
+                        return;
+                    }
+                    if (results.data.length > 0 && (!results.data[0].hasOwnProperty('nr_tombo') || !results.data[0].hasOwnProperty('Descrica07'))) {
                         showLoader(false);
                         showToast("Erro: A coluna 'nr_tombo' não foi encontrada.", 'error');
                         csvFileInput.value = ''; return;
