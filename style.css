@@ -66,6 +66,19 @@ body {
     cursor: not-allowed;
 }
 
+.action-button-sm {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    border-radius: 0.5rem;
+    color: white;
+    font-weight: 600;
+    transition: opacity 0.2s;
+}
+.action-button-sm:hover { opacity: 0.9; }
+
 .status-display {
     padding: 0.75rem;
     border-radius: 0.5rem;

@@ -47,10 +47,16 @@
             <p id="file-status" class="text-center text-gray-500 mt-4">Nenhum arquivo carregado.</p>
         </section>
 
-        <!-- Seção de Busca -->
+        <!-- Seção de Busca e Ações Globais -->
         <main id="mainContent" class="hidden">
             <section class="bg-white p-6 rounded-lg shadow-md mb-6">
-                <h2 class="text-xl font-semibold mb-4 text-center">2. Busque pelo Número do Tombo</h2>
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-xl font-semibold">2. Busque e Exporte</h2>
+                    <button id="exportButton" class="action-button-sm bg-ifsc-blue">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+                        Exportar CSV
+                    </button>
+                </div>
                 <div class="flex items-center gap-3">
                     <div class="relative flex-grow">
                         <input type="text" id="tomboInput" class="tombo-input" placeholder="Digite o nº do tombo...">
@@ -69,12 +75,12 @@
                 <div id="itemStatus" class="status-display mb-6"></div>
 
                 <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                    <button data-action="transfer" class="action-button bg-ifsc-blue">Solicitar Transferência</button>
-                    <button data-action="dispose" class="action-button bg-ifsc-gold">Solicitar Desfazimento</button>
-                    <button data-action="no-tombo" class="action-button bg-ifsc-purple">Add Sem Tombo / Inválido</button>
-                    <button data-action="not-found" class="action-button bg-ifsc-red">Bem Não Encontrado</button>
-                    <button data-action="request-label" class="action-button bg-gray-600">Solicitar Etiqueta</button>
-                    <button data-action="found" class="action-button bg-ifsc-green">Marcar como Encontrado</button>
+                    <button data-action="transfer" class="action-button bg-ifsc-blue"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 3 4 4-4 4"/><path d="M20 7H4"/><path d="m8 21-4-4 4-4"/><path d="M4 17h16"/></svg>Transferência</button>
+                    <button data-action="dispose" class="action-button bg-ifsc-gold"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 11h-4a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1Z"/><path d="M18 11V7a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v4"/><path d="m12 16 1.5 2.5"/><path d="m10.5 18.5.5-2.5"/><path d="m14.5 18.5-.5-2.5"/></svg>Desfazimento</button>
+                    <button data-action="no-tombo" class="action-button bg-ifsc-purple"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Z"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg>Inválido</button>
+                    <button data-action="not-found" class="action-button bg-ifsc-red"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m12 8v4"/><path d="M12 16h.01"/></svg>Não Encontrado</button>
+                    <button data-action="request-label" class="action-button bg-gray-600"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05-9.19 2.14a1 1 0 0 0-1.05.05l-8.34 6.7a1 1 0 0 0 0 1.62l9.19 7.91a1 1 0 0 0 1.05-.05l8.34-6.7a1 1 0 0 0 0-1.62Z"/><path d="m14 7-5.5 5.5"/><path d="M16.5 8.5 12 13"/></svg>Etiqueta</button>
+                    <button data-action="found" class="action-button bg-ifsc-green"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Encontrado</button>
                 </div>
             </section>
         </main>

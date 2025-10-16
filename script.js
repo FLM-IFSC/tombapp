@@ -13,6 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
         itemResponsible: document.getElementById('itemResponsible'),
         itemStatus: document.getElementById('itemStatus'),
         actionButtons: document.querySelectorAll('.action-button[data-action]'),
+        exportButton: document.getElementById('exportButton'),
         toast: document.getElementById('toast'),
         loader: document.getElementById('loader'),
     };
@@ -151,6 +152,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
     ui.actionButtons.forEach(button => {
         button.addEventListener('click', () => handleAction(button.dataset.action));
+    });
+
+    ui.exportButton.addEventListener('click', () => {
+        if (patrimonioMap.size === 0) {
+            showToast('Nenhum dado para exportar.', 'error');
+            return;
+        }
+
+        const dataToExport = Array.from(patrimonioMap.values());
+        const csv = Papa.unparse(dataToExport, {
+            columns: ['nr_tombo', 'Descrica07', 'nome', 'status', 'original_responsavel'], // Define a ordem e quais colunas exportar
+            header: true
+        });
+
+        const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `relatorio_patrimonio_${new Date().toISOString().slice(0, 10)}.csv`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        showToast('Relatório CSV exportado com sucesso!');
     });
 
     // --- Funções de UI Auxiliares ---
