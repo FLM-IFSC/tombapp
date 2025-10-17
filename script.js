@@ -15,7 +15,6 @@ document.addEventListener('DOMContentLoaded', () => {
         itemTombo: document.getElementById('itemTombo'),
         itemResponsible: document.getElementById('itemResponsible'),
         itemStatus: document.getElementById('itemStatus'),
-        actionButtons: document.querySelectorAll('.action-button[data-action]'),
         mainTableBody: document.getElementById('mainTableBody'),
         paginationControls: document.getElementById('paginationControls'),
         toast: document.getElementById('toast'),
@@ -240,8 +239,14 @@ document.addEventListener('DOMContentLoaded', () => {
     ui.loadButton.addEventListener('click', () => loadItem());
     ui.tomboInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') loadItem(); });
 
-    ui.actionButtons.forEach(button => {
-        button.addEventListener('click', () => handleAction(button.dataset.action));
+    // Adiciona um único event listener ao container dos botões de ação
+    // Isso usa "event delegation" para garantir que os botões funcionem mesmo se forem adicionados dinamicamente.
+    const actionButtonContainer = document.getElementById('itemDetailsSection');
+    actionButtonContainer.addEventListener('click', (event) => {
+        const button = event.target.closest('.action-button[data-action]');
+        if (button) {
+            handleAction(button.dataset.action);
+        }
     });
 
     ui.exportButton.addEventListener('click', () => {
