@@ -79,6 +79,14 @@ body {
 }
 .action-button-sm:hover { opacity: 0.9; }
 
+.encoding-select {
+    border: 1px solid #ced4da;
+    border-radius: 0.5rem;
+    padding: 0.75rem;
+    font-size: 1rem;
+    background-color: white;
+}
+
 .status-display {
     padding: 0.75rem;
     border-radius: 0.5rem;

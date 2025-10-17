@@ -5,15 +5,18 @@ document.addEventListener('DOMContentLoaded', () => {
         mainContent: document.getElementById('mainContent'),
         itemDetailsSection: document.getElementById('itemDetailsSection'),
         csvFileInput: document.getElementById('csvFileInput'),
+        encodingSelect: document.getElementById('encodingSelect'),
         fileStatus: document.getElementById('file-status'),
         tomboInput: document.getElementById('tomboInput'),
         loadButton: document.getElementById('loadButton'),
+        exportButton: document.getElementById('exportButton'),
         itemDescription: document.getElementById('itemDescription'),
         itemTombo: document.getElementById('itemTombo'),
         itemResponsible: document.getElementById('itemResponsible'),
         itemStatus: document.getElementById('itemStatus'),
         actionButtons: document.querySelectorAll('.action-button[data-action]'),
-        exportButton: document.getElementById('exportButton'),
+        processedItemsTableBody: document.getElementById('processedItemsTableBody'),
+        processedItemsSection: document.getElementById('processedItemsSection'),
         toast: document.getElementById('toast'),
         loader: document.getElementById('loader'),
     };
@@ -21,30 +24,42 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Estado da Aplicação ---
     let patrimonioMap = new Map();
     let currentItem = null;
+    let processedItems = new Set();
 
     // --- Lógica Principal ---
     function parseCSV(csvText) {
         Papa.parse(csvText, {
             header: true,
             skipEmptyLines: 'greedy',
+            newline: '\r\n', // Tenta a quebra de linha do Windows primeiro
             complete: (results) => {
-                if (results.errors.length > 0) {
-                    showLoader(false);
-                    showToast(`Erro no parsing do CSV: ${results.errors[0].message}`, 'error');
-                    return;
+                // Se falhar, tenta com a quebra de linha do Unix
+                if (!results.data.length && csvText.includes('\n')) {
+                    Papa.parse(csvText, {
+                        header: true,
+                        skipEmptyLines: 'greedy',
+                        newline: '\n',
+                        complete: handleParseResults
+                    });
+                } else {
+                    handleParseResults(results);
                 }
-                if (results.data.length > 0 && !results.data[0].hasOwnProperty('nr_tombo')) {
-                    showLoader(false);
-                    showToast("A coluna 'nr_tombo' é obrigatória no arquivo CSV.", 'error');
-                    return;
-                }
-                initializeApplication(results.data);
-            },
-            error: (err) => {
-                showLoader(false);
-                showToast(`Erro fatal ao ler o arquivo: ${err.message}`, 'error');
             }
         });
+    }
+
+    function handleParseResults(results) {
+        if (results.errors.length > 0) {
+            showLoader(false);
+            showToast(`Erro no parsing do CSV: ${results.errors[0].message}`, 'error');
+            return;
+        }
+        if (results.data.length > 0 && !results.data[0].hasOwnProperty('nr_tombo')) {
+            showLoader(false);
+            showToast("A coluna 'nr_tombo' é obrigatória.", 'error');
+            return;
+        }
+        initializeApplication(results.data);
     }
 
     function initializeApplication(data) {
@@ -59,7 +74,8 @@ document.addEventListener('DOMContentLoaded', () => {
         showLoader(false);
         ui.uploadSection.classList.add('hidden');
         ui.mainContent.classList.remove('hidden');
-        ui.fileStatus.textContent = `${patrimonioMap.size} itens carregados com sucesso!`;
+        const itemCount = patrimonioMap.size === 1 ? "1 item" : `${patrimonioMap.size} itens`;
+        ui.fileStatus.textContent = `${itemCount} carregado(s) com sucesso!`;
         ui.fileStatus.classList.add('text-ifsc-green');
         showToast('Arquivo carregado. Pronto para buscar.');
     }
@@ -131,8 +147,28 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         currentItem.status = newStatus;
         patrimonioMap.set(String(currentItem.nr_tombo), currentItem);
-        displayItemDetails(currentItem, true); // Passa o item e show=true para re-renderizar
+        addProcessedItem(currentItem);
+        displayItemDetails(currentItem, true);
         showToast(toastMessage);
+    }
+
+    function addProcessedItem(item) {
+        const tombo = String(item.nr_tombo);
+        const rowId = `processed-${tombo}`;
+        let row = document.getElementById(rowId);
+
+        if (row) {
+            row.cells[2].innerHTML = `<span class="status-badge status-${item.status.toLowerCase().replace(/ /g, '-')}">${item.status}</span>`;
+        } else {
+            row = ui.processedItemsTableBody.insertRow(0);
+            row.id = rowId;
+            row.innerHTML = `
+                <td class="p-3 font-medium">${tombo}</td>
+                <td class="p-3">${item.Descrica07}</td>
+                <td class="p-3 text-center"><span class="status-badge status-${item.status.toLowerCase().replace(/ /g, '-')}">${item.status}</span></td>
+            `;
+        }
+        ui.processedItemsSection.classList.remove('hidden');
     }
 
     // --- Handlers de Eventos ---
@@ -140,10 +176,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const file = event.target.files[0];
         if (file) {
             showLoader(true);
+            const selectedEncoding = ui.encodingSelect.value;
             ui.fileStatus.textContent = `Carregando ${file.name}...`;
             const reader = new FileReader();
             reader.onload = (e) => parseCSV(e.target.result);
-            reader.readAsText(file, 'UTF-8');
+            reader.readAsText(file, selectedEncoding);
         }
     });
 
@@ -159,13 +196,11 @@ document.addEventListener('DOMContentLoaded', () => {
             showToast('Nenhum dado para exportar.', 'error');
             return;
         }
-
         const dataToExport = Array.from(patrimonioMap.values());
         const csv = Papa.unparse(dataToExport, {
-            columns: ['nr_tombo', 'Descrica07', 'nome', 'status', 'original_responsavel'], // Define a ordem e quais colunas exportar
+            columns: ['nr_tombo', 'Descrica07', 'nome', 'status', 'original_responsavel'],
             header: true
         });
-
         const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);

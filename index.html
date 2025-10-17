@@ -33,15 +33,19 @@
             <p class="text-gray-600">Conferência e Ações Rápidas</p>
         </header>
 
-        <!-- Seção de Upload Simplificada -->
+        <!-- Seção de Upload -->
         <section id="uploadSection" class="bg-white p-6 rounded-lg shadow-md mb-6">
             <h2 class="text-xl font-semibold mb-4 text-center">1. Carregue seu arquivo de patrimônio</h2>
-            <p class="text-gray-600 mb-6 max-w-2xl mx-auto">O arquivo CSV deve estar no formato <strong>UTF-8</strong> para garantir a leitura correta de todos os caracteres.</p>
-            <div class="flex justify-center">
+            <p class="text-gray-600 mb-6 max-w-2xl mx-auto">Selecione o arquivo CSV e a codificação correta para garantir a leitura de todos os caracteres.</p>
+            <div class="flex justify-center items-center gap-4">
                 <label for="csvFileInput" class="file-input-button">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="M12 12v9"/><path d="m16 16-4-4-4 4"/></svg>
-                    Carregar Arquivo CSV
+                    Carregar CSV
                 </label>
+                <select id="encodingSelect" class="encoding-select">
+                    <option value="UTF-8">UTF-8</option>
+                    <option value="ISO-8859-1">ISO-8859-1 (Latin1)</option>
+                </select>
             </div>
             <input type="file" id="csvFileInput" class="hidden" accept=".csv">
             <p id="file-status" class="text-center text-gray-500 mt-4">Nenhum arquivo carregado.</p>
@@ -71,9 +75,7 @@
                 <h2 id="itemDescription" class="text-xl font-bold text-center mb-2"></h2>
                 <p id="itemTombo" class="text-sm text-gray-500 text-center mb-1"></p>
                 <p id="itemResponsible" class="text-sm text-gray-500 text-center mb-4"></p>
-
                 <div id="itemStatus" class="status-display mb-6"></div>
-
                 <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
                     <button data-action="transfer" class="action-button bg-ifsc-blue"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 3 4 4-4 4"/><path d="M20 7H4"/><path d="m8 21-4-4 4-4"/><path d="M4 17h16"/></svg>Transferência</button>
                     <button data-action="dispose" class="action-button bg-ifsc-gold"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 11h-4a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1Z"/><path d="M18 11V7a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v4"/><path d="m12 16 1.5 2.5"/><path d="m10.5 18.5.5-2.5"/><path d="m14.5 18.5-.5-2.5"/></svg>Desfazimento</button>
@@ -81,6 +83,25 @@
                     <button data-action="not-found" class="action-button bg-ifsc-red"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m12 8v4"/><path d="M12 16h.01"/></svg>Não Encontrado</button>
                     <button data-action="request-label" class="action-button bg-gray-600"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05-9.19 2.14a1 1 0 0 0-1.05.05l-8.34 6.7a1 1 0 0 0 0 1.62l9.19 7.91a1 1 0 0 0 1.05-.05l8.34-6.7a1 1 0 0 0 0-1.62Z"/><path d="m14 7-5.5 5.5"/><path d="M16.5 8.5 12 13"/></svg>Etiqueta</button>
                     <button data-action="found" class="action-button bg-ifsc-green"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Encontrado</button>
+                </div>
+            </section>
+
+            <!-- Tabela de Itens Processados -->
+            <section id="processedItemsSection" class="hidden bg-white p-6 rounded-lg shadow-md">
+                <h2 class="text-xl font-semibold mb-4">Itens Processados na Sessão</h2>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                            <tr>
+                                <th scope="col" class="p-3">Nº Tombo</th>
+                                <th scope="col" class="p-3">Descrição</th>
+                                <th scope="col" class="p-3 text-center">Novo Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="processedItemsTableBody">
+                            <!-- Linhas adicionadas via JS -->
+                        </tbody>
+                    </table>
                 </div>
             </section>
         </main>
