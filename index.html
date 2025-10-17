@@ -86,23 +86,25 @@
                 </div>
             </section>
 
-            <!-- Tabela de Itens Processados -->
-            <section id="processedItemsSection" class="hidden bg-white p-6 rounded-lg shadow-md">
-                <h2 class="text-xl font-semibold mb-4">Itens Processados na Sessão</h2>
+            <!-- Tabela de Dados Principal -->
+            <section id="mainTableSection" class="bg-white p-6 rounded-lg shadow-md">
+                 <h2 class="text-xl font-semibold mb-4">Visão Geral do Patrimônio</h2>
                 <div class="overflow-x-auto">
                     <table class="w-full text-sm">
                         <thead class="text-xs text-gray-700 uppercase bg-gray-50">
                             <tr>
                                 <th scope="col" class="p-3">Nº Tombo</th>
                                 <th scope="col" class="p-3">Descrição</th>
-                                <th scope="col" class="p-3 text-center">Novo Status</th>
+                                <th scope="col" class="p-3">Responsável</th>
+                                <th scope="col" class="p-3 text-center">Status</th>
                             </tr>
                         </thead>
-                        <tbody id="processedItemsTableBody">
+                        <tbody id="mainTableBody">
                             <!-- Linhas adicionadas via JS -->
                         </tbody>
                     </table>
                 </div>
+                <div id="paginationControls" class="flex justify-center items-center mt-4 space-x-2"></div>
             </section>
         </main>
     </div>

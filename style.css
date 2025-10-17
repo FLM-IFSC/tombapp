@@ -101,6 +101,31 @@ body {
 .status-não-encontrado { background-color: #ef4444; }
 .status-desfazimento-solicitado { background-color: #bfa95a; }
 
+/* --- Tabela e Paginação --- */
+#mainTableBody tr.bg-green-200 {
+    background-color: #d1fae5; /* Um verde claro para destaque */
+}
+
+.pagination-button {
+    padding: 0.5rem 1rem;
+    border: 1px solid #ddd;
+    background-color: white;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+.pagination-button:hover:not(:disabled) {
+    background-color: #f0f0f0;
+}
+.pagination-button:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+.pagination-button.active {
+    background-color: #008040;
+    color: white;
+    border-color: #008040;
+}
+
 /* --- Toast & Loader --- */
 #toast {
     position: fixed;

@@ -4,6 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
         uploadSection: document.getElementById('uploadSection'),
         mainContent: document.getElementById('mainContent'),
         itemDetailsSection: document.getElementById('itemDetailsSection'),
+        mainTableSection: document.getElementById('mainTableSection'),
         csvFileInput: document.getElementById('csvFileInput'),
         encodingSelect: document.getElementById('encodingSelect'),
         fileStatus: document.getElementById('file-status'),
@@ -15,8 +16,8 @@ document.addEventListener('DOMContentLoaded', () => {
         itemResponsible: document.getElementById('itemResponsible'),
         itemStatus: document.getElementById('itemStatus'),
         actionButtons: document.querySelectorAll('.action-button[data-action]'),
-        processedItemsTableBody: document.getElementById('processedItemsTableBody'),
-        processedItemsSection: document.getElementById('processedItemsSection'),
+        mainTableBody: document.getElementById('mainTableBody'),
+        paginationControls: document.getElementById('paginationControls'),
         toast: document.getElementById('toast'),
         loader: document.getElementById('loader'),
     };
@@ -24,42 +25,32 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Estado da Aplicação ---
     let patrimonioMap = new Map();
     let currentItem = null;
-    let processedItems = new Set();
+    let currentPage = 1;
+    const ITEMS_PER_PAGE = 50;
 
     // --- Lógica Principal ---
     function parseCSV(csvText) {
         Papa.parse(csvText, {
             header: true,
             skipEmptyLines: 'greedy',
-            newline: '\r\n', // Tenta a quebra de linha do Windows primeiro
             complete: (results) => {
-                // Se falhar, tenta com a quebra de linha do Unix
-                if (!results.data.length && csvText.includes('\n')) {
-                    Papa.parse(csvText, {
-                        header: true,
-                        skipEmptyLines: 'greedy',
-                        newline: '\n',
-                        complete: handleParseResults
-                    });
-                } else {
-                    handleParseResults(results);
+                if (results.errors.length > 0) {
+                    showLoader(false);
+                    showToast(`Erro no parsing: ${results.errors[0].message}`, 'error');
+                    return;
                 }
+                if (results.data.length > 0 && !results.data[0].hasOwnProperty('nr_tombo')) {
+                    showLoader(false);
+                    showToast("A coluna 'nr_tombo' é obrigatória.", 'error');
+                    return;
+                }
+                initializeApplication(results.data);
+            },
+            error: (err) => {
+                showLoader(false);
+                showToast(`Erro fatal ao ler o arquivo: ${err.message}`, 'error');
             }
         });
-    }
-
-    function handleParseResults(results) {
-        if (results.errors.length > 0) {
-            showLoader(false);
-            showToast(`Erro no parsing do CSV: ${results.errors[0].message}`, 'error');
-            return;
-        }
-        if (results.data.length > 0 && !results.data[0].hasOwnProperty('nr_tombo')) {
-            showLoader(false);
-            showToast("A coluna 'nr_tombo' é obrigatória.", 'error');
-            return;
-        }
-        initializeApplication(results.data);
     }
 
     function initializeApplication(data) {
@@ -78,23 +69,103 @@ document.addEventListener('DOMContentLoaded', () => {
         ui.fileStatus.textContent = `${itemCount} carregado(s) com sucesso!`;
         ui.fileStatus.classList.add('text-ifsc-green');
         showToast('Arquivo carregado. Pronto para buscar.');
+        renderPage(1);
     }
 
-    function loadItem() {
-        const tombo = ui.tomboInput.value.trim();
+    function renderPage(page) {
+        currentPage = page;
+        const data = Array.from(patrimonioMap.values());
+        const start = (page - 1) * ITEMS_PER_PAGE;
+        const end = start + ITEMS_PER_PAGE;
+        const paginatedItems = data.slice(start, end);
+
+        renderTable(paginatedItems);
+        renderPagination(data.length);
+    }
+
+    function renderTable(data) {
+        ui.mainTableBody.innerHTML = '';
+        if (data.length === 0) {
+            ui.mainTableBody.innerHTML = `<tr><td colspan="4" class="text-center p-6 text-gray-500">Nenhum item para exibir.</td></tr>`;
+            return;
+        }
+        const fragment = document.createDocumentFragment();
+        data.forEach(item => {
+            const row = document.createElement('tr');
+            const statusClass = `status-${item.status.toLowerCase().replace(/ /g, '-')}`;
+            row.className = 'border-b hover:bg-gray-50 cursor-pointer';
+            row.dataset.tombo = item.nr_tombo;
+            row.onclick = () => loadItem(item.nr_tombo);
+
+            row.innerHTML = `
+                <td class="p-3 font-medium">${item.nr_tombo}</td>
+                <td class="p-3">${item.Descrica07 || 'N/A'}</td>
+                <td class="p-3">${item.nome || 'N/A'}</td>
+                <td class="p-3 text-center"><span class="status-badge ${statusClass}">${item.status}</span></td>
+            `;
+            fragment.appendChild(row);
+        });
+        ui.mainTableBody.appendChild(fragment);
+    }
+
+    function renderPagination(totalItems) {
+        const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
+        ui.paginationControls.innerHTML = '';
+        if (totalPages <= 1) return;
+
+        const createButton = (text, page, isDisabled = false, isActive = false) => {
+            const button = document.createElement('button');
+            button.textContent = text;
+            button.className = 'pagination-button';
+            if (isActive) button.classList.add('active');
+            button.disabled = isDisabled;
+            button.onclick = () => renderPage(page);
+            return button;
+        };
+
+        ui.paginationControls.appendChild(createButton('Anterior', currentPage - 1, currentPage === 1));
+
+        for (let i = 1; i <= totalPages; i++) {
+             if (i === 1 || i === totalPages || (i >= currentPage - 2 && i <= currentPage + 2)) {
+                ui.paginationControls.appendChild(createButton(i, i, false, i === currentPage));
+            } else if (i === currentPage - 3 || i === currentPage + 3) {
+                 const span = document.createElement('span');
+                 span.textContent = '...';
+                 span.className = 'p-2';
+                 ui.paginationControls.appendChild(span);
+            }
+        }
+
+        ui.paginationControls.appendChild(createButton('Próximo', currentPage + 1, currentPage === totalPages));
+    }
+
+    function loadItem(tomboValue = null) {
+        const tombo = tomboValue || ui.tomboInput.value.trim();
         if (!tombo) {
             showToast('Por favor, digite um número de tombo.', 'error');
             return;
         }
-        currentItem = patrimonioMap.get(tombo);
+        currentItem = patrimonioMap.get(String(tombo));
         if (currentItem) {
             displayItemDetails(currentItem, true);
+            highlightTableRow(tombo);
         } else {
             showToast(`Item com tombo ${tombo} não encontrado.`, 'error');
             displayItemDetails(null, false);
         }
         ui.tomboInput.value = '';
         ui.tomboInput.focus();
+    }
+
+    function highlightTableRow(tombo) {
+        // Remove destaque de outras linhas
+        document.querySelectorAll('#mainTableBody tr.bg-green-200').forEach(r => r.classList.remove('bg-green-200'));
+        // Adiciona destaque à linha atual
+        const row = document.querySelector(`#mainTableBody tr[data-tombo='${tombo}']`);
+        if (row) {
+            row.classList.add('bg-green-200');
+            row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
     }
 
     function displayItemDetails(item, show) {
@@ -147,28 +218,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         currentItem.status = newStatus;
         patrimonioMap.set(String(currentItem.nr_tombo), currentItem);
-        addProcessedItem(currentItem);
         displayItemDetails(currentItem, true);
+        renderPage(currentPage); // Re-renderiza a tabela para mostrar o novo status
         showToast(toastMessage);
-    }
-
-    function addProcessedItem(item) {
-        const tombo = String(item.nr_tombo);
-        const rowId = `processed-${tombo}`;
-        let row = document.getElementById(rowId);
-
-        if (row) {
-            row.cells[2].innerHTML = `<span class="status-badge status-${item.status.toLowerCase().replace(/ /g, '-')}">${item.status}</span>`;
-        } else {
-            row = ui.processedItemsTableBody.insertRow(0);
-            row.id = rowId;
-            row.innerHTML = `
-                <td class="p-3 font-medium">${tombo}</td>
-                <td class="p-3">${item.Descrica07}</td>
-                <td class="p-3 text-center"><span class="status-badge status-${item.status.toLowerCase().replace(/ /g, '-')}">${item.status}</span></td>
-            `;
-        }
-        ui.processedItemsSection.classList.remove('hidden');
     }
 
     // --- Handlers de Eventos ---
@@ -184,7 +236,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    ui.loadButton.addEventListener('click', loadItem);
+    ui.loadButton.addEventListener('click', () => loadItem());
     ui.tomboInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') loadItem(); });
 
     ui.actionButtons.forEach(button => {
