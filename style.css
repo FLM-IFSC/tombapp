@@ -168,3 +168,28 @@ body {
 @keyframes spin {
     to { transform: rotate(360deg); }
 }
+
+/* --- Banner de Restauração --- */
+.restore-banner {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background-color: #343a40;
+    color: white;
+    padding: 1rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+    z-index: 6000;
+}
+.restore-button-yes, .restore-button-no {
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+}
+.restore-button-yes { background-color: #10b981; color: white; }
+.restore-button-no { background-color: #6c757d; color: white; }

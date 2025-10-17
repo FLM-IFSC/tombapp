@@ -218,8 +218,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         currentItem.status = newStatus;
         patrimonioMap.set(String(currentItem.nr_tombo), currentItem);
+        saveSession(); // Salva o estado após cada ação
         displayItemDetails(currentItem, true);
         renderPage(currentPage); // Re-renderiza a tabela para mostrar o novo status
+        highlightTableRow(currentItem.nr_tombo); // Re-aplica o destaque após a re-renderização
         showToast(toastMessage);
     }
 
@@ -228,11 +230,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const file = event.target.files[0];
         if (file) {
             showLoader(true);
-            const selectedEncoding = ui.encodingSelect.value;
             ui.fileStatus.textContent = `Carregando ${file.name}...`;
             const reader = new FileReader();
             reader.onload = (e) => parseCSV(e.target.result);
-            reader.readAsText(file, selectedEncoding);
+            reader.readAsText(file, 'ISO-8859-1'); // Padroniza para ISO-8859-1
         }
     });
 
@@ -274,4 +275,44 @@ document.addEventListener('DOMContentLoaded', () => {
         ui.toast.classList.add(type, 'show');
         setTimeout(() => ui.toast.classList.remove('show'), duration);
     }
+
+    // --- Lógica de Persistência ---
+    function saveSession() {
+        // Serializa o Map para um formato que o JSON entende (array de pares chave-valor)
+        const serializedMap = JSON.stringify(Array.from(patrimonioMap.entries()));
+        localStorage.setItem('patrimonioSession', serializedMap);
+    }
+
+    function restoreSession(data) {
+        patrimonioMap = new Map(data);
+        showLoader(false);
+        ui.uploadSection.classList.add('hidden');
+        ui.mainContent.classList.remove('hidden');
+        const itemCount = patrimonioMap.size === 1 ? "1 item" : `${patrimonioMap.size} itens`;
+        ui.fileStatus.textContent = `Sessão anterior restaurada com ${itemCount}.`;
+        ui.fileStatus.classList.add('text-ifsc-green');
+        showToast('Sessão restaurada com sucesso.');
+        renderPage(1);
+    }
+
+    function checkForSavedSession() {
+        const savedSession = localStorage.getItem('patrimonioSession');
+        if (savedSession) {
+            const notification = document.getElementById('restore-notification');
+            notification.classList.remove('hidden');
+
+            document.getElementById('restore-yes').onclick = () => {
+                const data = JSON.parse(savedSession);
+                restoreSession(data);
+                notification.classList.add('hidden');
+            };
+
+            document.getElementById('restore-no').onclick = () => {
+                localStorage.removeItem('patrimonioSession');
+                notification.classList.add('hidden');
+            };
+        }
+    }
+
+    checkForSavedSession(); // Verifica ao carregar a página
 });
