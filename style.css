@@ -1,0 +1,195 @@
+/* --- Globals & Helpers --- */
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: #f8f9fa;
+}
+.hidden { display: none !important; }
+
+/* --- Layout --- */
+.container {
+    max-width: 600px;
+}
+
+/* --- Components --- */
+.file-input-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background-color: #008040;
+    color: white;
+    font-weight: bold;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+.file-input-button:hover { background-color: #006633; }
+
+.tombo-input {
+    width: 100%;
+    padding: 0.75rem 1rem 0.75rem 2.5rem; /* Padding for icon */
+    border: 1px solid #ced4da;
+    border-radius: 0.5rem;
+    font-size: 1.125rem;
+}
+.tombo-input:focus {
+    outline: none;
+    border-color: #008040;
+    box-shadow: 0 0 0 2px rgba(0, 128, 64, 0.25);
+}
+
+.search-icon {
+    position: absolute;
+    left: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #6c757d;
+    width: 20px;
+    height: 20px;
+}
+
+.action-button {
+    width: 100%;
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+    color: white;
+    font-weight: 600;
+    transition: opacity 0.2s;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.5rem;
+}
+.action-button:hover { opacity: 0.9; }
+.action-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.action-button-sm {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    border-radius: 0.5rem;
+    color: white;
+    font-weight: 600;
+    transition: opacity 0.2s;
+}
+.action-button-sm:hover { opacity: 0.9; }
+
+.encoding-select {
+    border: 1px solid #ced4da;
+    border-radius: 0.5rem;
+    padding: 0.75rem;
+    font-size: 1rem;
+    background-color: white;
+}
+
+.status-display {
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+    text-align: center;
+    font-weight: 600;
+    color: white;
+    text-transform: capitalize;
+}
+.status-pendente { background-color: #f59e0b; }
+.status-encontrado { background-color: #10b981; }
+.status-transferência-solicitada { background-color: #3b82f6; }
+.status-não-encontrado { background-color: #ef4444; }
+.status-desfazimento-solicitado { background-color: #bfa95a; }
+
+/* --- Tabela e Paginação --- */
+#mainTableBody tr.bg-green-200 {
+    background-color: #d1fae5; /* Um verde claro para destaque */
+}
+
+.pagination-button {
+    padding: 0.5rem 1rem;
+    border: 1px solid #ddd;
+    background-color: white;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+.pagination-button:hover:not(:disabled) {
+    background-color: #f0f0f0;
+}
+.pagination-button:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+.pagination-button.active {
+    background-color: #008040;
+    color: white;
+    border-color: #008040;
+}
+
+/* --- Toast & Loader --- */
+#toast {
+    position: fixed;
+    bottom: -100px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 1rem 1.5rem;
+    border-radius: 0.5rem;
+    color: white;
+    background-color: #343a40;
+    font-weight: 500;
+    z-index: 5000;
+    transition: bottom 0.4s ease-in-out;
+}
+#toast.show { bottom: 2rem; }
+#toast.success { background-color: #10b981; }
+#toast.error { background-color: #ef4444; }
+
+#loader {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(4px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+.spinner {
+    border: 4px solid rgba(0, 0, 0, 0.1);
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border-left-color: #008040;
+    animation: spin 1s linear infinite;
+}
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* --- Banner de Restauração --- */
+.restore-banner {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background-color: #343a40;
+    color: white;
+    padding: 1rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+    z-index: 6000;
+}
+.restore-button-yes, .restore-button-no {
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+}
+.restore-button-yes { background-color: #10b981; color: white; }
+.restore-button-no { background-color: #6c757d; color: white; }
